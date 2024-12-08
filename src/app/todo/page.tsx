@@ -6,8 +6,10 @@ import { useEffect, useState, useCallback } from "react";
 import useSearchList from "../hooks/useSearchList";
 import Header from "../components/header";
 import Main from "../components/main";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Notification from "../components/notification";
+import SearchParamsHandler from "../components/searchParamsHandler";
+import { Suspense } from "react";
 
 type UserType = {
   user_id: string;
@@ -122,16 +124,7 @@ const Todo = () => {
   const completeTasks = displayedTasks.filter((task) => task.isComplete);
 
   // ユーザー情報アップデート時の通知処理
-  const searchParams = useSearchParams();
   const [notification, setNotification] = useState<string>("");
-
-  useEffect(() => {
-    const action = searchParams.get("action");
-    if (action === "updated") {
-      setNotification("ユーザー情報を更新しました");
-      router.replace("/todo");
-    }
-  }, [searchParams]);
 
   // console.log("NEXT_PUBLIC_API_BASE_URL",process.env.NEXT_PUBLIC_API_BASE_URL);
 
@@ -142,6 +135,10 @@ const Todo = () => {
           <Header user={user} setSearchKeyword={setSearchKeyword} />
 
           <Main addTask={addTask} completeTasks={completeTasks} incompleteTasks={incompleteTasks} toggleTaskCompletion={toggleTaskCompletion} userId={user.user_id} onDelete={deleteTask} />
+
+          <Suspense fallback={null}>
+            <SearchParamsHandler setNotification={setNotification} router={router} onUpdated={true} redirectPath="/todo" />
+          </Suspense>
 
           {notification && <Notification message={notification} onComplete={() => setNotification("")} />}
         </>

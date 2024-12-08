@@ -2,8 +2,10 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import UserForm from "@/app/components/userForm";
+import { Suspense, useState } from "react";
 
-const UserUpdatePage = () => {
+// URLパラメーターを処理するコンポーネント
+const UserDataLoader = ({ onLoadData }: { onLoadData: (data: { userId: string; username: string; email: string; thumbnail_path: string }) => void }) => {
   const params = useParams();
   const searchParams = useSearchParams();
 
@@ -14,10 +16,27 @@ const UserUpdatePage = () => {
     thumbnail_path: searchParams.get("thumbnail_path") || "",
   };
 
-  console.log(userData);
+  onLoadData(userData);
+  return null;
+};
+
+const UserUpdatePage = () => {
+  const [userData, setUserData] = useState({
+    userId: "",
+    username: "",
+    email: "",
+    thumbnail_path: "",
+  });
 
   // return <UserForm update />;
-  return <UserForm update userData={userData} />;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <UserDataLoader onLoadData={setUserData} />
+      </Suspense>
+      <UserForm update userData={userData} />
+    </>
+  );
 };
 
 export default UserUpdatePage;

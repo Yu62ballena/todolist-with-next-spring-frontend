@@ -3,11 +3,13 @@
 import axios from "axios";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import styled from "styled-components";
 import Notification from "./components/notification";
 import { media } from "./constants/breakpoints";
+import { Suspense } from "react";
+import SearchParamsHandler from "./components/searchParamsHandler";
 
 // スタイル
 const Container = styled.div`
@@ -113,6 +115,7 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
+
 const buttonVariants = {
   initial: { scale: 1 },
   hover: {
@@ -120,6 +123,7 @@ const buttonVariants = {
     backgroundColor: "#f0f0f0",
   },
 };
+
 
 export default function Home() {
   const router = useRouter();
@@ -132,6 +136,8 @@ export default function Home() {
 
   // エラーメッセージの管理
   const [error, setError] = useState("");
+
+  const [notification, setNotification] = useState("");
 
   // 入力値が変更されたときの処理
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,21 +206,6 @@ export default function Home() {
     }
   };
 
-  // 登録・ログアウト時の通知
-  const searchParams = useSearchParams();
-  const [notification, setNotification] = useState<string>("");
-
-  useEffect(() => {
-    const action = searchParams.get("action");
-    if (action === "logout") {
-      setNotification("ログアウトしました");
-      router.replace("/");
-    } else if (action === "registered") {
-      setNotification("ユーザー情報を登録しました");
-      router.replace("/");
-    }
-  }, [searchParams]);
-
   return (
     <Container>
       <h1>My Todo</h1>
@@ -244,6 +235,15 @@ export default function Home() {
       {/* </InputContainer> */}
 
       {/* 登録・ログアウト通知 */}
+      <Suspense fallback={null}>
+        <SearchParamsHandler 
+          setNotification={setNotification} 
+          router={router} 
+          onLogout={true}
+          onRegistered={true}
+        />
+      </Suspense>
+
       {notification && <Notification message={notification} onComplete={() => setNotification("")} />}
     </Container>
   );
