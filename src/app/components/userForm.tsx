@@ -9,8 +9,7 @@ import Link from "next/link";
 import styled from "styled-components";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-
-// import { span } from "framer-motion/client";
+import Image from "next/image";
 
 // スタイル
 const Container = styled.div`
@@ -113,8 +112,6 @@ const updateUserSchema = z.object({
 // フォームデータの型定義
 type UserFormData = z.infer<typeof createUserSchema>;
 
-const deleteUser = () => {};
-
 const UserForm = ({ update, userData }: UserFormProps) => {
   const router = useRouter();
 
@@ -141,31 +138,30 @@ const UserForm = ({ update, userData }: UserFormProps) => {
     const token = localStorage.getItem("token");
 
     try {
+      if (update && (!userData || !userData.userId)) {
+        console.error("ユーザーIDが見つかりません");
+        return;
+      }
+
       const updateData = {
         username: data.username,
         email: data.email,
         ...(data.password ? { password: data.password } : {}),
-        ...(selectedFileName ? { thumbnail_path: uploadedImagePath } : {}),
+        thumbnail_path: uploadedImagePath || userData?.thumbnail_path || "",
       };
 
-      const endpoint = update ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userData?.userId}` : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`;
+      const endpoint = update ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userData!.userId}` : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`;
       const successMessage = update ? "更新成功しました" : "登録成功しました";
 
-      // const response = update ? await axios.put(endpoint, updateData) : await axios.post(endpoint, updateData);
-
-      // リクエスト前のデバッグ情報
-      console.log("API URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
-      console.log("Full Endpoint:", endpoint);
-      console.log("Request Method:", update ? "PUT" : "POST");
-      console.log("Request Data:", updateData);
-
       console.log("successMessage", successMessage);
-      // console.log(response);
+
+      // デバッグ用ログ
+      console.log("Request URL: ", endpoint);
+      console.log("Request Data", updateData);
 
       const config = {
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
       };
@@ -177,15 +173,14 @@ const UserForm = ({ update, userData }: UserFormProps) => {
       router.push(update ? "/todo?action=updated" : "/?action=registered");
     } catch (e) {
       console.error("フォーム送信エラー：", e);
+      if (axios.isAxiosError(e)) {
+        console.error("詳細エラー：", e.response?.data);
+      }
     }
   };
 
-  // サムネ画像選択
-  const [selectedFileName, setSelectedFileName] = useState<string>(update && userData?.thumbnail_path ? userData.thumbnail_path : "選択されていません");
-
   useEffect(() => {
     if (update && userData?.thumbnail_path) {
-      setSelectedFileName(userData.thumbnail_path);
       setValue("thumbnail", userData.thumbnail_path);
     }
   }, [update, userData, setValue]);
@@ -195,13 +190,11 @@ const UserForm = ({ update, userData }: UserFormProps) => {
 
     if (file) {
       try {
-        setSelectedFileName(file.name);
         const imagePath = await uploadImage(file);
         setUploadedImagePath(imagePath);
         setValue("thumbnail", imagePath);
       } catch (error) {
         console.error("ファイル処理エラー：", error);
-        setSelectedFileName("画像のアップロードに失敗しました。");
       }
     }
   };
@@ -231,6 +224,41 @@ const UserForm = ({ update, userData }: UserFormProps) => {
     }
   };
 
+  const deleteUser = async () => {
+    if (!userData || !userData.userId) {
+      console.error("ユーザー情報が見つかりません");
+      return;
+    }
+
+    if (!confirm("本当にユーザー情報を削除しますか？")) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    try {
+      const endpoint = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userData.userId}`;
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      await axios.delete(endpoint, config);
+
+      // 削除後、ログアウトしてログイン画面へ繊維
+      localStorage.removeItem("token");
+      router.push("/?action=deleted");
+    } catch (error) {
+      console.error("ユーザー削除エラー：", error);
+      if (axios.isAxiosError(error)) {
+        console.error("詳細エラー", error.response?.data);
+      }
+      alert("ユーザーの削除に失敗しました。");
+    }
+  };
+
   return (
     <Container>
       <h1>{update ? "ユーザー情報更新" : "ユーザー登録"}</h1>
@@ -249,6 +277,18 @@ const UserForm = ({ update, userData }: UserFormProps) => {
         {errors.password && <span style={{ color: "red", fontSize: "12px" }}>{errors.password.message}</span>}
 
         <label>プロフィール画像</label>
+        {update && userData?.thumbnail_path && (
+          <Image
+            src={userData.thumbnail_path}
+            width={100}
+            height={100}
+            alt="現在のプロフィール画像"
+            style={{
+              objectFit: "cover",
+              marginBottom: "10px",
+            }}
+          />
+        )}
         <input type="file" accept="image/*" onChange={handleFileChange} style={{ border: "none" }} />
 
         <div>

@@ -21,17 +21,9 @@ const Container = styled.div`
   align-items: center;
   background-color: mintcream;
 
-  ${media.tablet} {
-  }
-
-  ${media.mobile} {
-  }
-
   & h1 {
+    font-size: 30px;
     margin-bottom: 30px;
-
-    ${media.tablet} {
-    }
   }
 `;
 
@@ -115,7 +107,6 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
-
 const buttonVariants = {
   initial: { scale: 1 },
   hover: {
@@ -123,7 +114,6 @@ const buttonVariants = {
     backgroundColor: "#f0f0f0",
   },
 };
-
 
 export default function Home() {
   const router = useRouter();
@@ -209,7 +199,6 @@ export default function Home() {
   return (
     <Container>
       <h1>My Todo</h1>
-      {/* <InputContainer> */}
       <Form onSubmit={handleSubmit}>
         <label>メールアドレス</label>
         <input name="email" type="email" value={formData.email} onChange={handleChange} required />
@@ -225,23 +214,15 @@ export default function Home() {
               新規ユーザー登録
             </Button>
           </StyledLink>
-          {/* <Link href="/todo"> */}
           <Button type="submit" variants={buttonVariants} initial="initial" whileHover="hover">
             ログイン
           </Button>
-          {/* </Link> */}
         </div>
       </Form>
-      {/* </InputContainer> */}
 
       {/* 登録・ログアウト通知 */}
       <Suspense fallback={null}>
-        <SearchParamsHandler 
-          setNotification={setNotification} 
-          router={router} 
-          onLogout={true}
-          onRegistered={true}
-        />
+        <SearchParamsHandler setNotification={setNotification} router={router} onLogout={true} onRegistered={true} />
       </Suspense>
 
       {notification && <Notification message={notification} onComplete={() => setNotification("")} />}

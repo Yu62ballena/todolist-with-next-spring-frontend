@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import UserForm from "@/app/components/userForm";
 import { Suspense, useState } from "react";
@@ -9,14 +10,26 @@ const UserDataLoader = ({ onLoadData }: { onLoadData: (data: { userId: string; u
   const params = useParams();
   const searchParams = useSearchParams();
 
-  const userData = {
-    userId: params.id.toString(),
-    username: searchParams.get("username") || "",
-    email: searchParams.get("email") || "",
-    thumbnail_path: searchParams.get("thumbnail_path") || "",
-  };
+  const username = searchParams.get("username") || "";
+  const email = searchParams.get("email") || "";
+  const thumbnailPath = searchParams.get("thumbnail_path") || "";
 
-  onLoadData(userData);
+  useEffect(() => {
+    if (params.id) {
+      console.log("Loading user data for ID:", params.id);
+
+      const userData = {
+        userId: params.id.toString(),
+        username,
+        email,
+        thumbnail_path: thumbnailPath,
+      };
+      onLoadData(userData);
+    } else {
+      console.error("User ID not found in params");
+    }
+  }, [params.id, onLoadData, username, email, thumbnailPath]);
+
   return null;
 };
 
@@ -28,13 +41,20 @@ const UserUpdatePage = () => {
     thumbnail_path: "",
   });
 
-  // return <UserForm update />;
+  const [isLoading, setIsLoading] = useState(true);
+
+  const handleLoadData = useCallback((data: typeof userData) => {
+    setUserData(data);
+    setIsLoading(false);
+  }, []);
+
+
   return (
     <>
-      <Suspense fallback={null}>
-        <UserDataLoader onLoadData={setUserData} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <UserDataLoader onLoadData={handleLoadData} />
       </Suspense>
-      <UserForm update userData={userData} />
+      {!isLoading && <UserForm update userData={userData} />}
     </>
   );
 };
