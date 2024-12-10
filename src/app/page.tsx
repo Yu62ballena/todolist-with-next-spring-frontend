@@ -141,6 +141,7 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    console.log("API URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
     console.log("Submitting Data:", formData);
 
     try {
